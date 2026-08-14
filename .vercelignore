@@ -4,6 +4,7 @@
 # subir el APP_KEY de desarrollo.
 .env
 .env.*
+!.env.example
 
 # Con outputDirectory: "public", TODO lo que está en public/ se sirve como archivo
 # estático. Si public/index.php se subiera, pedir /index.php devolvería el código
