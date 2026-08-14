@@ -33,6 +33,18 @@ class AvailabilityService
     public const SLOT_STEP_MINUTES = 15;
 
     /**
+     * Tramos de atención agrupados por día de la semana, cargados una sola vez.
+     *
+     * Sin esto, dailySummary() consultaría la tabla `availabilities` una vez por cada
+     * día del rango: 14 consultas idénticas para pintar un selector de fechas. Es el
+     * mismo N+1 de siempre, sólo que escondido detrás de un bucle en vez de una
+     * relación de Eloquent.
+     *
+     * @var Collection<int, Collection<int, Availability>>|null
+     */
+    private ?Collection $windowsByDay = null;
+
+    /**
      * Huecos reservables para un servicio en una fecha concreta.
      *
      * @param  EloquentCollection<int, Booking>|null  $existingBookings  Reservas ya cargadas.
@@ -114,8 +126,9 @@ class AvailabilityService
      * Resumen de los próximos días: cuántos huecos quedan en cada uno.
      *
      * Sirve para pintar el selector de fecha sin pedir un endpoint por día. Carga las
-     * reservas de todo el rango de una sola consulta y las agrupa en memoria, así que
-     * son 2 queries en total (agenda + reservas) sin importar cuántos días se pidan.
+     * reservas de todo el rango de una sola consulta y las agrupa en memoria, y la
+     * agenda queda cacheada en `$windowsByDay`: son 2 consultas en total, sin importar
+     * cuántos días se pidan.
      *
      * @return array<int, array{date: string, label: string, weekday: string, slots: int}>
      */
@@ -154,11 +167,13 @@ class AvailabilityService
      */
     private function windowsFor(CarbonImmutable $date): Collection
     {
-        return Availability::query()
+        $this->windowsByDay ??= Availability::query()
             ->active()
-            ->where('day_of_week', $date->dayOfWeek)
             ->orderBy('start_time')
-            ->get();
+            ->get()
+            ->groupBy('day_of_week');
+
+        return $this->windowsByDay->get($date->dayOfWeek) ?? new Collection;
     }
 
     /**

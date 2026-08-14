@@ -9,8 +9,8 @@ use App\Models\Booking;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\AvailabilityService;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Seeder;
 
 /**
@@ -68,7 +68,6 @@ class BookingSeeder extends Seeder
 
         $ahora = CarbonImmutable::now();
         $desde = $ahora->startOfDay()->subDays(self::DIAS_PASADOS);
-        $duracionMedia = (int) round($servicios->avg('duration_minutes'));
 
         $total = self::DIAS_PASADOS + self::DIAS_FUTUROS + 1;
 
@@ -83,7 +82,7 @@ class BookingSeeder extends Seeder
                 continue;
             }
 
-            $this->llenarDia($dia, $tramos, $servicios, $clientes, $ahora, $duracionMedia);
+            $this->llenarDia($dia, $tramos, $servicios, $clientes, $ahora);
         }
     }
 
@@ -100,16 +99,17 @@ class BookingSeeder extends Seeder
         EloquentCollection $servicios,
         EloquentCollection $clientes,
         CarbonImmutable $ahora,
-        int $duracionMedia,
     ): void {
         // Ocupación objetivo del día: entre el 30% y el 50%, para que siempre quede
         // hueco libre visible en la grilla.
         $objetivo = fake()->numberBetween(30, 50) / 100;
-        $probabilidad = $this->probabilidadPorPaso($objetivo, $duracionMedia);
 
         foreach ($tramos as $tramo) {
             $finTramo = $dia->setTimeFromTimeString($tramo->end_time);
             $cursor = $dia->setTimeFromTimeString($tramo->start_time);
+
+            $objetivoMinutos = (int) round((int) $cursor->diffInMinutes($finTramo) * $objetivo);
+            $ocupados = 0;
 
             while ($cursor->lessThan($finTramo)) {
                 $candidatos = $servicios->filter(
@@ -120,6 +120,28 @@ class BookingSeeder extends Seeder
                 if ($candidatos->isEmpty()) {
                     break;
                 }
+
+                $deficit = $objetivoMinutos - $ocupados;
+
+                // Entre los que entran, se prefiere uno que no se pase de lo que falta
+                // vender: sin esto, un solo servicio de 120' se come medio sábado y el
+                // día termina muy por encima del objetivo. El 1.25 es margen a propósito
+                // — con el corte justo en el déficit, los servicios largos casi nunca
+                // entraban y la demo quedaba con puros cortes de 30'.
+                $acotados = $candidatos->filter(
+                    fn (Service $servicio) => $servicio->duration_minutes <= $deficit * 1.25
+                );
+
+                /** @var EloquentCollection<int, Service> $pool */
+                $pool = $acotados->isNotEmpty()
+                    ? $acotados
+                    : $candidatos->sortBy('duration_minutes')->take(1);
+
+                $probabilidad = $this->probabilidadPorPaso(
+                    $deficit,
+                    (int) $cursor->diffInMinutes($finTramo),
+                    (int) round((float) $pool->avg('duration_minutes')),
+                );
 
                 if (! fake()->boolean($probabilidad)) {
                     // Hueco libre. De vez en cuando dejamos una cancelada encima: no
@@ -134,7 +156,7 @@ class BookingSeeder extends Seeder
                 }
 
                 /** @var Service $servicio */
-                $servicio = $candidatos->random();
+                $servicio = $pool->random();
 
                 // Alguien lo había reservado y lo canceló; después se volvió a vender.
                 // Comparten `starts_at` sin romper el UNIQUE porque la cancelada va con
@@ -145,23 +167,39 @@ class BookingSeeder extends Seeder
 
                 $this->crear($servicio, $clientes->random(), $cursor, $this->estadoActivo($cursor, $ahora), $ahora);
 
+                $ocupados += $servicio->duration_minutes;
                 $cursor = $cursor->addMinutes($servicio->duration_minutes);
             }
         }
     }
 
     /**
-     * Probabilidad (en %) de ocupar en cada paso para acercarse a la ocupación objetivo.
+     * Probabilidad (en %) de ocupar en este paso del cursor.
      *
-     * Ocupar consume `$duracionMedia` minutos y no ocupar consume el paso de 15', así
-     * que la fracción de agenda ocupada tiende a  p·d / (p·d + (1−p)·s).  Despejando p
-     * para una ocupación `t` queda la fórmula de abajo.
+     * Ocupar consume `$duracionEsperada` minutos y dejar libre consume el paso de 15',
+     * así que la fracción ocupada tiende a  p·d / (p·d + (1−p)·s).  Despejando p para
+     * una fracción `f` sale la cuenta de abajo.
+     *
+     * `f` no es fija: se recalcula en cada paso como "minutos que faltan vender sobre
+     * minutos que quedan de tramo". Así el sorteo se autocorrige — si la mañana salió
+     * cargada, la probabilidad baja sola — y la ocupación final no se va de rango por
+     * mala suerte, que es lo que pasaba con una probabilidad constante.
+     *
+     * `$duracionEsperada` es el promedio de los servicios que realmente se pueden
+     * sortear en este paso, no el del catálogo entero: como cerca del objetivo sólo
+     * quedan elegibles los cortos, usar el promedio global subestimaba p y los días
+     * terminaban por debajo del objetivo.
      */
-    private function probabilidadPorPaso(float $objetivo, int $duracionMedia): int
+    private function probabilidadPorPaso(int $deficit, int $restantes, int $duracionEsperada): int
     {
-        $paso = AvailabilityService::SLOT_STEP_MINUTES;
+        if ($deficit <= 0 || $restantes <= 0 || $duracionEsperada <= 0) {
+            return 0;
+        }
 
-        $p = ($objetivo * $paso) / ($duracionMedia * (1 - $objetivo) + $objetivo * $paso);
+        $paso = AvailabilityService::SLOT_STEP_MINUTES;
+        $f = min($deficit / $restantes, 0.9);
+
+        $p = ($f * $paso) / ($duracionEsperada * (1 - $f) + $f * $paso);
 
         return (int) round($p * 100);
     }

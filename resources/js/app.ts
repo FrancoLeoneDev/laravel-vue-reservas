@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import PublicLayout from '@/layouts/PublicLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
@@ -17,8 +18,13 @@ createInertiaApp({
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
-            default:
+            // El panel de administración usa el layout con sidebar del starter kit.
+            case name.startsWith('admin/'):
                 return AppLayout;
+            // Todo lo que ve el cliente (catálogo, reserva, mis reservas) va con el
+            // layout público, que funciona igual para visitantes y para logueados.
+            default:
+                return PublicLayout;
         }
     },
     progress: {

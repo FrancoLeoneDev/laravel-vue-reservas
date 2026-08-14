@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import {
+    CalendarDays,
+    Clock,
+    FolderGit2,
+    Scissors,
+    Store,
+} from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -14,27 +20,40 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
+import { home } from '@/routes';
+import { agenda } from '@/routes/admin';
+import { index as availabilityIndex } from '@/routes/admin/availability';
+import { index as servicesIndex } from '@/routes/admin/services';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
+        title: 'Agenda',
+        href: agenda(),
+        icon: CalendarDays,
+    },
+    {
+        title: 'Servicios',
+        href: servicesIndex(),
+        icon: Scissors,
+    },
+    {
+        title: 'Disponibilidad',
+        href: availabilityIndex(),
+        icon: Clock,
     },
 ];
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
+        title: 'Ver sitio público',
+        href: home(),
+        icon: Store,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        title: 'Código en GitHub',
+        href: 'https://github.com/FrancoLeoneDev/laravel-vue-reservas',
+        icon: FolderGit2,
     },
 ];
 </script>
@@ -45,7 +64,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="agenda()">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
