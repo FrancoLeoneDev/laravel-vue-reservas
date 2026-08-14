@@ -25,7 +25,9 @@ class ServiceFactory extends Factory
      */
     public function definition(): array
     {
-        $name = Str::title(fake()->unique()->words(2, true));
+        // Dos `word()` sueltos en vez de `words(2, true)`: Faker tipa `words()` como
+        // array|string y esto devuelve string sin ambigüedad.
+        $name = Str::title(fake()->unique()->word().' '.fake()->word());
 
         return [
             'name' => $name,

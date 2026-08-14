@@ -102,6 +102,8 @@ class BookingFactory extends Factory
             return 30;
         }
 
-        return Service::query()->find($serviceId)?->duration_minutes ?? 30;
+        $service = Service::query()->find($serviceId);
+
+        return $service instanceof Service ? $service->duration_minutes : 30;
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Enums\BookingStatus;
 use App\Models\Booking;
+use App\Models\Service;
 use App\Models\User;
 use App\Services\BookingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,6 +64,26 @@ it('un cliente no entra al panel de administración', function () {
     $this->actingAs($cliente)->get(route('admin.agenda'))->assertForbidden();
     $this->actingAs($cliente)->get(route('admin.services.index'))->assertForbidden();
     $this->actingAs($cliente)->get(route('admin.availability.index'))->assertForbidden();
+});
+
+it('todas las pantallas del panel responden con datos reales', function () {
+    // Humo sobre los tres controladores del admin con la base ya poblada: confirma
+    // que las props que arma el backend se construyen sin reventar. Si algún día
+    // alguien renombra una columna, esto se cae acá y no en producción.
+    $this->seed();
+
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->get(route('admin.agenda'))->assertOk();
+    $this->actingAs($admin)->get(route('admin.agenda', ['view' => 'week']))->assertOk();
+    $this->actingAs($admin)->get(route('admin.services.index'))->assertOk();
+    $this->actingAs($admin)->get(route('admin.availability.index'))->assertOk();
+
+    // Y las pantallas públicas con catálogo cargado.
+    $this->get(route('home'))->assertOk();
+
+    $servicio = Service::query()->where('is_active', true)->firstOrFail();
+    $this->get(route('bookings.create', $servicio))->assertOk();
 });
 
 it('el admin entra al panel y puede cambiar el estado de cualquier reserva', function () {

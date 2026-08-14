@@ -328,6 +328,68 @@ php artisan queue:work
 php artisan test
 ```
 
+Los tests corren contra **MySQL**, no contra SQLite en memoria, y es a propósito: las dos
+defensas centrales del proyecto son específicas de InnoDB. En SQLite `lockForUpdate()` es
+un no-op y no hay forma de abrir dos conexiones concurrentes contra una base `:memory:`,
+así que el test de concurrencia no probaría nada.
+
+Antes de la primera corrida hay que crear la base de test (una sola vez):
+
+```bash
+docker exec mysql-reservas mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS reservas_testing; GRANT ALL PRIVILEGES ON reservas_testing.* TO 'reservas'@'%'; FLUSH PRIVILEGES;"
+```
+
+La suite cubre, además del camino feliz: la doble reserva exacta, el solapamiento parcial,
+el rechazo a nivel de base saltándose la capa de servicio, la liberación del horario al
+cancelar, los turnos contiguos que sí conviven, las Policies (un cliente no toca reservas
+ajenas ni entra al panel) y que las credenciales demo que muestra el login son realmente
+las que funcionan.
+
+El mismo conjunto corre en CI (GitHub Actions) con un servicio MySQL, junto a Pint,
+PHPStan/Larastan, ESLint y Prettier.
+
+---
+
+## Deploy
+
+El proyecto está pensado para [Laravel Cloud](https://cloud.laravel.com). Con el CLI
+instalado (`composer global require laravel/cloud-cli`):
+
+```bash
+cloud auth      # OAuth por navegador
+cloud ship      # flujo guiado: crea la app, la base y el primer deploy
+```
+
+Variables de entorno a configurar en el entorno de producción:
+
+```ini
+APP_NAME="Nova Studio"
+APP_ENV=production
+APP_DEBUG=false
+APP_LOCALE=es
+APP_FALLBACK_LOCALE=es
+APP_TIMEZONE=America/Argentina/Buenos_Aires
+DEMO_MODE=true          # muestra las credenciales demo en el login
+```
+
+Las variables `DB_*` las inyecta la plataforma al vincular la base MySQL.
+
+Comandos de deploy:
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+php artisan db:seed --force
+```
+
+`db:seed` es **idempotente** (todo usa `updateOrCreate`), así que se puede dejar en cada
+deploy sin duplicar datos.
+
+Para que salgan los emails de confirmación hace falta un proceso en background corriendo
+`php artisan queue:work`. Sin él la app funciona igual: la reserva se confirma y el job
+queda encolado.
+
 ---
 
 ## Estructura relevante

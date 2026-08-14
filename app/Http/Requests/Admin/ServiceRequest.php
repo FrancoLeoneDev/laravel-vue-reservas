@@ -50,7 +50,9 @@ class ServiceRequest extends FormRequest
         $slug = $base;
         $i = 2;
 
-        $ignoreId = $this->route('service')?->id;
+        // En el update la ruta trae el modelo; en el store no hay nada que ignorar.
+        $current = $this->route('service');
+        $ignoreId = $current instanceof Service ? $current->id : null;
 
         while ($this->slugTaken($slug, $ignoreId)) {
             $slug = $base.'-'.$i++;

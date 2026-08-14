@@ -40,7 +40,7 @@ class AvailabilityService
      * mismo N+1 de siempre, sólo que escondido detrás de un bucle en vez de una
      * relación de Eloquent.
      *
-     * @var Collection<int, Collection<int, Availability>>|null
+     * @var Collection<int|string, EloquentCollection<int, Availability>>|null
      */
     private ?Collection $windowsByDay = null;
 
@@ -168,9 +168,9 @@ class AvailabilityService
     /**
      * Tramos de atención activos para el día de la semana de `$date`.
      *
-     * @return Collection<int, Availability>
+     * @return EloquentCollection<int, Availability>
      */
-    private function windowsFor(CarbonImmutable $date): Collection
+    private function windowsFor(CarbonImmutable $date): EloquentCollection
     {
         $this->windowsByDay ??= Availability::query()
             ->active()
@@ -178,7 +178,7 @@ class AvailabilityService
             ->get()
             ->groupBy('day_of_week');
 
-        return $this->windowsByDay->get($date->dayOfWeek) ?? new Collection;
+        return $this->windowsByDay->get($date->dayOfWeek) ?? new EloquentCollection;
     }
 
     /**
