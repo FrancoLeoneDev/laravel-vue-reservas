@@ -1,2 +1,9 @@
 resources/js/components/ui/*
 resources/views/mail/*
+
+# Código generado por Wayfinder. Se commitea a propósito: la imagen de build de
+# Vercel no tiene PHP, así que allá no se puede regenerar (ver vite.config.ts).
+# Sin estas líneas, `format:check` falla sobre decenas de archivos que no escribimos.
+resources/js/actions/*
+resources/js/routes/*
+resources/js/wayfinder/*

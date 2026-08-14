@@ -59,8 +59,14 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // El MySQL administrado (Aiven) exige TLS y hay que darle el certificado
+            // de la CA. Se acepta una ruta relativa al proyecto y se resuelve con
+            // base_path() para que el mismo valor funcione en Windows y en el runtime
+            // serverless, donde el proyecto no vive en la misma ruta.
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                Mysql::ATTR_SSL_CA => is_string($ca = env('MYSQL_ATTR_SSL_CA')) && $ca !== ''
+                    ? (str_starts_with($ca, '/') || preg_match('/^[A-Za-z]:/', $ca) === 1 ? $ca : base_path($ca))
+                    : null,
             ]) : [],
         ],
 

@@ -1,0 +1,26 @@
+# Existiendo .vercelignore, Vercel deja de aplicar .gitignore: hay que excluir .env
+# explícitamente. Si se sube, Laravel lo lee y termina apuntando a la base LOCAL
+# (127.0.0.1:3309) en vez de a las variables de entorno de la plataforma, además de
+# subir el APP_KEY de desarrollo.
+.env
+.env.*
+
+# Con outputDirectory: "public", TODO lo que está en public/ se sirve como archivo
+# estático. Si public/index.php se subiera, pedir /index.php devolvería el código
+# PHP en texto plano, porque Vercel no lo ejecuta: el front controller ahora es
+# api/index.php. Es una fuga de código real y no se nota desde la home.
+public/index.php
+public/hot
+public/storage
+
+# El manifiesto de paquetes se construye en /tmp en la primera request. Subir uno
+# generado en la máquina de desarrollo trae proveedores de dev (Pail, Pint...) que
+# en Vercel no existen, porque instala con --no-dev.
+bootstrap/cache/*.php
+
+node_modules
+tests
+storage/logs/*.log
+docker-compose.yml
+docs
+.playwright-mcp

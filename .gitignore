@@ -7,9 +7,6 @@
 /public/storage
 /storage/*.key
 /storage/pail
-/resources/js/actions
-/resources/js/routes
-/resources/js/wayfinder
 /vendor
 .DS_Store
 .env
@@ -30,3 +27,5 @@ yarn-error.log
 
 /.playwright-mcp
 /*.png
+
+.vercel
