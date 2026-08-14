@@ -12,6 +12,28 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Los tests corren contra MySQL, no contra SQLite: las dos defensas centrales
+    # del proyecto (la columna generada con índice único y el SELECT ... FOR UPDATE
+    # con gap locks) son específicas de InnoDB y en SQLite no probarían nada.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: reservas
+          MYSQL_USER: reservas
+          MYSQL_PASSWORD: reservas
+        ports:
+          # Mismo puerto que docker-compose en local, así phpunit.xml y .env.example
+          # sirven tal cual acá sin variables extra.
+          - 3309:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
 
     steps:
       - name: Checkout code
@@ -19,10 +41,17 @@ jobs:
         with:
           persist-credentials: false
 
+      # composer.lock pinnea Symfony 8.1, que pide php >= 8.4.1; con 8.3 el
+      # `composer install` revienta con veinte "requires php >=8.4.1". Usamos 8.5,
+      # que es la misma versión con la que se desarrolla y la que corre en producción
+      # (vercel-php@0.9.0).
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
+          # pdo_mysql no viene en el set por defecto de setup-php y los tests van
+          # contra MySQL.
+          extensions: pdo_mysql
           tools: composer:v2
           coverage: none
 
@@ -30,9 +59,48 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
+          cache: npm
 
-      - name: Setup Application
-        run: composer setup
+      # phpunit.xml apunta a `reservas_testing`; el contenedor sólo crea `reservas`.
+      - name: Create testing database
+        run: >-
+          mysql -h 127.0.0.1 -P 3309 -uroot -proot
+          -e "CREATE DATABASE IF NOT EXISTS reservas_testing;
+              GRANT ALL PRIVILEGES ON reservas_testing.* TO 'reservas'@'%';
+              FLUSH PRIVILEGES;"
 
-      - name: Run CI Checks
-        run: composer ci:check
+      # Pasos explícitos en vez de `composer setup`: ese script corre
+      # `php artisan migrate --force` contra la base de la app, que en CI no hace
+      # falta, y además esconde en un solo paso qué fue lo que falló.
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # El build tiene que ir después de key:generate: el plugin de Wayfinder
+      # ejecuta `php artisan` durante el build de Vite.
+      #
+      - name: Install and build front-end
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Check PHP formatting
+        run: composer lint:check
+
+      # types:check ya incluye --memory-limit=1G; PHPStan se queda sin memoria con
+      # los 128M por defecto de PHP.
+      - name: Analyse PHP types
+        run: composer types:check
+
+      - name: Check front-end
+        run: |
+          npm run lint:check
+          npm run format:check
+          npm run types:check
+
+      - name: Run tests
+        run: php artisan test
