@@ -1,0 +1,24 @@
+services:
+    mysql:
+        image: mysql:8.4
+        container_name: mysql-reservas
+        restart: unless-stopped
+        # Puerto no estándar a propósito: 3306, 3307 y 3308 ya están ocupados por otros
+        # proyectos Laravel corriendo en paralelo en esta máquina.
+        ports:
+            - '3309:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: reservas
+            MYSQL_USER: reservas
+            MYSQL_PASSWORD: reservas
+        volumes:
+            - mysql-reservas-data:/var/lib/mysql
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-proot']
+            interval: 5s
+            timeout: 5s
+            retries: 20
+
+volumes:
+    mysql-reservas-data:
