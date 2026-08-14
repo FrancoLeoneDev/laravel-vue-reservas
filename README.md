@@ -59,6 +59,21 @@ que están realmente libres en ese momento.
 
 ![Login con las dos cuentas de demostración visibles](docs/screenshots/03-login-demo.png)
 
+### Mis reservas (cliente)
+
+Próximos turnos con opción de cancelar, e historial. Las canceladas quedan tachadas: no se
+borran, y el horario que ocupaban vuelve a estar disponible.
+
+![Mis reservas del cliente](docs/screenshots/04-mis-reservas.png)
+
+### Agenda del día (admin)
+
+![Agenda del día con métricas del período](docs/screenshots/05-admin-agenda-dia.png)
+
+### Agenda de la semana (admin)
+
+![Agenda semanal](docs/screenshots/06-admin-agenda-semana.png)
+
 ---
 
 ## Alcance
