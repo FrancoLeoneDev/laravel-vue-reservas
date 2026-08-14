@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -36,6 +37,26 @@ class UserFactory extends Factory
             'two_factor_confirmed_at' => null,
             /* @end-chisel-2fa */
         ];
+    }
+
+    /**
+     * Usuario con rol de administrador.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Admin,
+        ]);
+    }
+
+    /**
+     * Usuario con rol de cliente.
+     */
+    public function client(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Client,
+        ]);
     }
 
     /**

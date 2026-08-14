@@ -40,7 +40,12 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'isAdmin' => (bool) $request->user()?->isAdmin(),
             ],
+
+            // Credenciales de demostración que se muestran en el login.
+            // Se apagan poniendo DEMO_MODE=false: en una app real esto no va.
+            'demo' => config('demo.enabled') ? config('demo.accounts') : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

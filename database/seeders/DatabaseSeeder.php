@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -12,14 +11,17 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * El orden importa: las reservas necesitan clientes, servicios y la agenda
+     * semanal ya cargados para poder ubicarse en huecos válidos.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            UserSeeder::class,
+            ServiceSeeder::class,
+            AvailabilitySeeder::class,
+            BookingSeeder::class,
         ]);
     }
 }
