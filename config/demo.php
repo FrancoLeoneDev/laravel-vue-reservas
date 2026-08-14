@@ -18,6 +18,12 @@
 return [
     'enabled' => (bool) env('DEMO_MODE', false),
 
+    /*
+    | Secreto que protege el endpoint de reinicio de la demo. Lo manda el cron de
+    | Vercel como bearer token. Si está vacío, el endpoint devuelve 404.
+    */
+    'cron_secret' => env('CRON_SECRET'),
+
     'accounts' => [
         [
             'role' => 'Administrador',

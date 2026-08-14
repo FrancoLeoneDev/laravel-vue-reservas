@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AvailabilityController;
 use App\Http\Controllers\Admin\BookingStatusController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\ResetDemoController;
 use App\Http\Controllers\ServiceCatalogController;
 use Illuminate\Support\Facades\Route;
 
@@ -65,5 +66,17 @@ Route::middleware(['auth', 'verified', 'admin'])
 
         Route::patch('reservas/{booking}/estado', [BookingStatusController::class, 'update'])->name('bookings.status');
     });
+
+/*
+|--------------------------------------------------------------------------
+| Mantenimiento de la demo
+|--------------------------------------------------------------------------
+|
+| Lo llama el cron de Vercel una vez por día (ver la clave `crons` en vercel.json).
+| Está protegido por CRON_SECRET; sin ese header devuelve 403.
+|
+*/
+
+Route::get('cron/reset-demo', ResetDemoController::class)->name('cron.reset-demo');
 
 require __DIR__.'/settings.php';
