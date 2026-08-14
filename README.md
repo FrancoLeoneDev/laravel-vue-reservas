@@ -12,7 +12,7 @@ turno**. Esa parte está explicada en detalle más abajo, en
 
 ## Demo
 
-**URL:** _(pendiente de deploy — se completa al publicar)_
+**URL:** <https://laravel-vue-reservas.vercel.app>
 
 Hay dos cuentas de demostración, visibles en la propia pantalla de login con un botón para
 entrar de un clic:
@@ -352,43 +352,95 @@ PHPStan/Larastan, ESLint y Prettier.
 
 ## Deploy
 
-El proyecto está pensado para [Laravel Cloud](https://cloud.laravel.com). Con el CLI
-instalado (`composer global require laravel/cloud-cli`):
+Está desplegado en **Vercel**, con la base MySQL en **Aiven**. PHP no es un runtime
+oficial de Vercel: corre sobre `vercel-php`, un runtime de la comunidad. Eso impone tres
+condiciones que explican casi todas las decisiones de esta sección.
+
+### Filesystem de sólo lectura
+
+En serverless sólo `/tmp` es escribible, y Laravel necesita escribir en `storage/`. El
+front controller de producción vive en [`api/index.php`](api/index.php) (Vercel descubre
+las funciones dentro de `api/`) y reubica las rutas escribibles antes de que arranque el
+framework.
+
+Un detalle que importa: la detección se hace **probando** el filesystem con
+`is_writable()`, no leyendo la variable `VERCEL`. Esa variable sólo existe si el proyecto
+habilita exponer las variables de sistema; si se condicionara a ella y no estuviera,
+Laravel arrancaría contra un storage de sólo lectura y moriría con
+`Target class [view] does not exist`, un error que no señala en absoluto la causa real.
+
+### El manifiesto de paquetes se construye en runtime
+
+Vercel instala con `--no-dev` y no corre los scripts de Composer, así que nunca regenera
+`bootstrap/cache`. Si se sube un manifiesto generado en la máquina de desarrollo, la
+función revienta buscando proveedores de dev (`Laravel\Pail\PailServiceProvider not
+found`). Por eso no se sube ninguno: `APP_PACKAGES_CACHE` y `APP_SERVICES_CACHE` apuntan a
+`/tmp` y Laravel lo construye, ya sin dev, en la primera request.
+
+### Confiar en el proxy, o la pantalla queda en blanco
+
+Vercel termina el TLS y reenvía a la función por HTTP plano. Sin `trustProxies`, Laravel
+arma las URLs de los assets con `http://` dentro de una página servida por `https://` y el
+navegador bloquea todos los scripts: la página carga, el HTML es correcto y la pantalla
+queda **en blanco** con una lista de errores de *Mixed Content*. Setear `APP_URL` no
+alcanza, porque las URLs de assets siguen el esquema de la request. Se resuelve en
+[`bootstrap/app.php`](bootstrap/app.php).
+
+### El build de Vercel no tiene PHP
+
+`buildCommand` corre en la imagen de Node; el runtime de PHP se arma en otra etapa. Como
+el plugin de Wayfinder invoca `php artisan` durante el build de Vite, allá fallaría con
+`php: command not found`. Por eso el código que genera está **commiteado** en
+`resources/js/routes` y `resources/js/actions`, y el plugin se saltea cuando detecta el
+entorno de Vercel (ver [`vite.config.ts`](vite.config.ts)). Se puede simular con
+`VERCEL=1 npm run build`.
+
+### Fuga de código por `public/index.php`
+
+Con `outputDirectory: "public"`, todo lo que está en `public/` se sirve como archivo
+estático — incluido `public/index.php`, que Vercel no ejecuta. Pedir `/index.php`
+devolvería el código PHP en texto plano. `.vercelignore` lo deja fuera del upload (junto
+con `.env`, que si no pisaría las variables de la plataforma con la config local).
+
+### Reproducirlo
 
 ```bash
-cloud auth      # OAuth por navegador
-cloud ship      # flujo guiado: crea la app, la base y el primer deploy
+vercel link
+vercel deploy --prod
 ```
 
-Variables de entorno a configurar en el entorno de producción:
+Variables de entorno de producción:
 
 ```ini
-APP_NAME="Nova Studio"
 APP_ENV=production
 APP_DEBUG=false
+APP_KEY=base64:...
 APP_LOCALE=es
-APP_FALLBACK_LOCALE=es
 APP_TIMEZONE=America/Argentina/Buenos_Aires
-DEMO_MODE=true          # muestra las credenciales demo en el login
+SESSION_DRIVER=cookie                 # no hay disco compartido entre instancias
+CACHE_STORE=array                     # el cache de archivos necesita escribir
+LOG_CHANNEL=stderr                    # los logs van al panel de Vercel
+QUEUE_CONNECTION=sync                 # no hay worker corriendo
+APP_PACKAGES_CACHE=/tmp/bootstrap-cache/packages.php
+APP_SERVICES_CACHE=/tmp/bootstrap-cache/services.php
+MYSQL_ATTR_SSL_CA=certs/aiven-ca.pem  # el MySQL administrado exige TLS
+DEMO_MODE=true                        # muestra las credenciales demo en el login
 ```
 
-Las variables `DB_*` las inyecta la plataforma al vincular la base MySQL.
-
-Comandos de deploy:
+Las migraciones **no** corren solas: no hay hook de deploy que ejecute artisan. Como la
+base es externa y accesible por internet, se corren desde la máquina apuntando el `.env`
+local a la base de producción:
 
 ```bash
-composer install --no-dev --optimize-autoloader
-npm ci && npm run build
-php artisan migrate --force
-php artisan db:seed --force
+php artisan migrate --force --seed
 ```
 
-`db:seed` es **idempotente** (todo usa `updateOrCreate`), así que se puede dejar en cada
-deploy sin duplicar datos.
+Los seeders son **idempotentes** (todo usa `updateOrCreate`), así que se pueden repetir
+sin duplicar datos.
 
-Para que salgan los emails de confirmación hace falta un proceso en background corriendo
-`php artisan queue:work`. Sin él la app funciona igual: la reserva se confirma y el job
-queda encolado.
+Como `QUEUE_CONNECTION=sync`, el email de confirmación se manda dentro de la request. Con
+`MAIL_MAILER=log` en la demo eso significa que queda registrado en el panel de Vercel en
+vez de enviarse.
 
 ---
 
