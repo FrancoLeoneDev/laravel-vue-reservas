@@ -17,7 +17,8 @@ import UserInfo from '@/components/UserInfo.vue';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 
 const page = usePage();
-const user = computed(() => page.props.auth.user);
+// Sólo se renderiza dentro del layout autenticado: acá siempre hay usuario.
+const user = computed(() => page.props.auth.user!);
 const { isMobile, state } = useSidebar();
 </script>
 

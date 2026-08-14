@@ -43,7 +43,21 @@ Los datos son de ejemplo y se regeneran con los seeders.
 
 ## Capturas
 
-_(Se agregan al publicar el deploy.)_
+### Catálogo público
+
+![Listado de servicios con duración, precio y horarios de atención](docs/screenshots/01-catalogo.png)
+
+### Selector de fecha y hora
+
+Los días muestran cuántos huecos quedan, y distinguen "Completo" (abre pero no queda
+lugar) de "Cerrado" (el negocio no atiende ese día). Los horarios que se ven son los
+que están realmente libres en ese momento.
+
+![Selector de día y de horario](docs/screenshots/02-selector-horarios.png)
+
+### Acceso demo de un clic
+
+![Login con las dos cuentas de demostración visibles](docs/screenshots/03-login-demo.png)
 
 ---
 

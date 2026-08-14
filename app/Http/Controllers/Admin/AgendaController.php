@@ -7,9 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Services\AvailabilityService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
-use Illuminate\Support\CarbonImmutable;
 use Inertia\Inertia;
 use Inertia\Response;
 

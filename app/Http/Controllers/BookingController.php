@@ -8,9 +8,10 @@ use App\Models\Booking;
 use App\Models\Service;
 use App\Services\AvailabilityService;
 use App\Services\BookingService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -117,7 +118,7 @@ class BookingController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Booking>  $bookings
+     * @param  Collection<int, Booking>  $bookings
      * @return array<int, array<string, mixed>>
      */
     private function present($bookings): array

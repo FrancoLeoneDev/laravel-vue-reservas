@@ -6,9 +6,7 @@ export type User = {
     phone: string | null;
     avatar?: string;
     email_verified_at: string | null;
-    /* @chisel-2fa */
     two_factor_enabled?: boolean;
-    /* @end-chisel-2fa */
     created_at: string;
     updated_at: string;
     [key: string]: unknown;
@@ -26,7 +24,6 @@ export type DemoAccount = {
     password: string;
 };
 
-/* @chisel-passkeys */
 export type Passkey = {
     id: number;
     name: string;
@@ -34,12 +31,9 @@ export type Passkey = {
     created_at_diff: string;
     last_used_at_diff: string | null;
 };
-/* @end-chisel-passkeys */
 
-/* @chisel-2fa */
 export type TwoFactorConfigContent = {
     title: string;
     description: string;
     buttonText: string;
 };
-/* @end-chisel-2fa */

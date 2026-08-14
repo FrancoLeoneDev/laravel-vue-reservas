@@ -26,6 +26,8 @@ export type DaySummary = {
     label: string;
     weekday: string;
     slots: number;
+    /** false = el negocio no abre ese día; true con slots 0 = abre pero está lleno. */
+    is_open: boolean;
 };
 
 /** Reserva tal como la ve el cliente en "Mis reservas". */

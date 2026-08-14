@@ -5,9 +5,9 @@ namespace App\Services;
 use App\Models\Availability;
 use App\Models\Booking;
 use App\Models\Service;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
@@ -130,7 +130,11 @@ class AvailabilityService
      * agenda queda cacheada en `$windowsByDay`: son 2 consultas en total, sin importar
      * cuántos días se pidan.
      *
-     * @return array<int, array{date: string, label: string, weekday: string, slots: int}>
+     * `is_open` distingue "el negocio no abre ese día" de "abre pero no queda lugar".
+     * Para el usuario no es lo mismo: un día cerrado nunca va a tener turnos, uno lleno
+     * puede liberarse si alguien cancela.
+     *
+     * @return array<int, array{date: string, label: string, weekday: string, slots: int, is_open: bool}>
      */
     public function dailySummary(Service $service, CarbonImmutable $from, int $days = 14): array
     {
@@ -154,6 +158,7 @@ class AvailabilityService
                 'label' => $date->translatedFormat('d M'),
                 'weekday' => Availability::DAY_NAMES[$date->dayOfWeek],
                 'slots' => count($this->availableSlots($service, $date, $dayBookings)),
+                'is_open' => $this->windowsFor($date)->isNotEmpty(),
             ];
         }
 

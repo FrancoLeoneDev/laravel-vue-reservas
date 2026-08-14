@@ -69,7 +69,11 @@ const year = new Date().getFullYear();
                                 Iniciar sesión
                             </Link>
                         </Button>
-                        <Button as-child size="sm" class="hidden sm:inline-flex">
+                        <Button
+                            as-child
+                            size="sm"
+                            class="hidden sm:inline-flex"
+                        >
                             <Link :href="register()">Crear cuenta</Link>
                         </Button>
                     </template>

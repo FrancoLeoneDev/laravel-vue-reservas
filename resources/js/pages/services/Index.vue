@@ -61,7 +61,8 @@ const steps = [
     {
         icon: Sparkles,
         title: 'Confirmá y listo',
-        description: 'Tu turno queda guardado y lo podés cancelar cuando quieras.',
+        description:
+            'Tu turno queda guardado y lo podés cancelar cuando quieras.',
     },
 ];
 
@@ -86,7 +87,7 @@ function scrollToSection(event: MouseEvent, id: string): void {
         <!-- Detalle geométrico: retícula tenue difuminada hacia los bordes. -->
         <div
             aria-hidden="true"
-            class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:56px_56px] opacity-60 [mask-image:radial-gradient(ellipse_60%_60%_at_50%_0%,black,transparent)]"
+            class="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_0%,black,transparent)] bg-[size:56px_56px] opacity-60"
         />
         <div
             aria-hidden="true"
@@ -101,7 +102,7 @@ function scrollToSection(event: MouseEvent, id: string): void {
                 </Badge>
 
                 <h1
-                    class="text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
+                    class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl"
                 >
                     Tu próximo turno en
                     <span class="block text-muted-foreground">
@@ -110,11 +111,11 @@ function scrollToSection(event: MouseEvent, id: string): void {
                 </h1>
 
                 <p
-                    class="mt-5 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg"
+                    class="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted-foreground sm:text-lg"
                 >
-                    Elegí el servicio, mirá la disponibilidad real de la agenda y
-                    quedate con el horario que mejor te venga. Sin llamadas, sin
-                    idas y vueltas por mensaje.
+                    Elegí el servicio, mirá la disponibilidad real de la agenda
+                    y quedate con el horario que mejor te venga. Sin llamadas,
+                    sin idas y vueltas por mensaje.
                 </p>
 
                 <div class="mt-8 flex flex-wrap items-center gap-3">
@@ -124,12 +125,18 @@ function scrollToSection(event: MouseEvent, id: string): void {
                         size="lg"
                         class="min-w-44"
                     >
-                        <a href="#servicios" @click="scrollToServices">
+                        <a
+                            href="#servicios"
+                            @click="scrollToSection($event, 'servicios')"
+                        >
                             Reservá tu turno
                         </a>
                     </Button>
                     <Button as-child variant="outline" size="lg">
-                        <a href="#horarios" @click="scrollToServices">
+                        <a
+                            href="#horarios"
+                            @click="scrollToSection($event, 'horarios')"
+                        >
                             Ver horarios de atención
                         </a>
                     </Button>
@@ -140,14 +147,18 @@ function scrollToSection(event: MouseEvent, id: string): void {
             <ul
                 class="mt-14 grid gap-6 border-t border-border/60 pt-10 sm:grid-cols-3 sm:gap-8"
             >
-                <li v-for="step in steps" :key="step.title" class="flex gap-3.5">
+                <li
+                    v-for="step in steps"
+                    :key="step.title"
+                    class="flex gap-3.5"
+                >
                     <span
                         class="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground"
                     >
                         <component :is="step.icon" class="size-4.5" />
                     </span>
                     <div class="space-y-1">
-                        <p class="text-sm font-medium leading-none">
+                        <p class="text-sm leading-none font-medium">
                             {{ step.title }}
                         </p>
                         <p class="text-sm text-muted-foreground">
@@ -238,7 +249,7 @@ function scrollToSection(event: MouseEvent, id: string): void {
     <!-- Horarios de atención -->
     <section
         id="horarios"
-        class="border-t border-border/60 bg-muted/30 scroll-mt-20"
+        class="scroll-mt-20 border-t border-border/60 bg-muted/30"
     >
         <div class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
             <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_1.4fr]">
@@ -271,7 +282,7 @@ function scrollToSection(event: MouseEvent, id: string): void {
                                         {{ day.day }}
                                     </span>
                                     <span
-                                        class="text-sm tabular-nums text-muted-foreground"
+                                        class="text-sm text-muted-foreground tabular-nums"
                                     >
                                         {{ day.ranges.join(' · ') }}
                                     </span>

@@ -8,9 +8,9 @@ use App\Jobs\SendBookingConfirmation;
 use App\Models\Booking;
 use App\Models\Service;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
