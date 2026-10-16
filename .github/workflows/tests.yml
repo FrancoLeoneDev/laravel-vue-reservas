@@ -46,7 +46,7 @@ jobs:
       # que es la misma versión con la que se desarrolla y la que corre en producción
       # (vercel-php@0.9.0).
       - name: Setup PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '8.5'
           # pdo_mysql no viene en el set por defecto de setup-php y los tests van
@@ -61,7 +61,7 @@ jobs:
       # lightningcss/rollup, las entradas wasm32-wasi de @emnapi, react como peer
       # opcional), así que un lock escrito por npm 11 hace fallar `npm ci` en npm 10.
       - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: npm
