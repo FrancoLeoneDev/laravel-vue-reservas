@@ -9,6 +9,5 @@
             "maxDuration": 30
         }
     },
-    "rewrites": [{ "source": "/(.*)", "destination": "/api/index.php" }],
-    "crons": [{ "path": "/cron/reset-demo", "schedule": "0 7 * * *" }]
+    "rewrites": [{ "source": "/(.*)", "destination": "/api/index.php" }]
 }

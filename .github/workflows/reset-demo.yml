@@ -1,0 +1,67 @@
+name: reset demo
+
+# Refresca los datos de la demo pública una vez por día.
+#
+# Corre acá y no como cron de Vercel por dos razones concretas:
+#
+#   1. Los seeders usan fakerphp/faker, que es una dependencia de DESARROLLO. Vercel
+#      instala con --no-dev, así que en la función serverless directamente no existe.
+#      Meterla en `require` sería ensuciar producción para un trabajo de mantenimiento.
+#
+#   2. El reset tarda ~75 s contra la base administrada (son ~90 inserts con la latencia
+#      de una conexión remota), bastante más que el límite de la función.
+#
+# El runner tiene las dependencias completas, no tiene ese límite, y la base de Aiven es
+# accesible por internet, así que es el lugar natural.
+
+on:
+  schedule:
+    # 07:00 UTC = 04:00 en Argentina, cuando no hay nadie mirando.
+    - cron: '0 7 * * *'
+  # Permite dispararlo a mano desde la pestaña Actions.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Reset the demo data
+        env:
+          APP_ENV: production
+          APP_KEY: ${{ secrets.APP_KEY }}
+          APP_LOCALE: es
+          APP_FAKER_LOCALE: es_AR
+          APP_TIMEZONE: America/Argentina/Buenos_Aires
+          DB_CONNECTION: mysql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ATTR_SSL_CA: certs/aiven-ca.pem
+          SESSION_DRIVER: cookie
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          DEMO_MODE: true
+        run: php artisan demo:reset
